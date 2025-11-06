@@ -24,24 +24,21 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-          cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Stop Gradle daemons
-        run: ./gradlew --stop || true
-
-      - name: Clean Gradle cache if corrupted
+      - name: Clean Gradle cache and daemons
         run: |
-          rm -rf ~/.gradle/caches/jars-* || true
-          rm -rf ~/.gradle/caches/modules-* || true
+          ./gradlew --stop || true
+          rm -rf ~/.gradle/caches || true
+          rm -rf ~/.gradle/daemon || true
 
       - name: Build with Gradle
-        run: ./gradlew clean build -x test
+        run: ./gradlew clean build -x test --no-daemon
 
       - name: Run tests
-        run: ./gradlew test
+        run: ./gradlew test --no-daemon
 
       - name: Upload test results
         if: always()
@@ -62,16 +59,18 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-          cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Stop Gradle daemons and clean
-        run: ./gradlew --stop || true
+      - name: Clean Gradle cache and daemons
+        run: |
+          ./gradlew --stop || true
+          rm -rf ~/.gradle/caches || true
+          rm -rf ~/.gradle/daemon || true
 
       - name: Run SpotBugs
-        run: ./gradlew clean spotbugsMain spotbugsTest
+        run: ./gradlew clean spotbugsMain spotbugsTest --no-daemon
         continue-on-error: true
 
       - name: Upload SpotBugs reports
@@ -82,7 +81,7 @@ jobs:
           path: build/reports/spotbugs/
 
       - name: Run PMD
-        run: ./gradlew pmdMain pmdTest
+        run: ./gradlew pmdMain pmdTest --no-daemon
         continue-on-error: true
 
       - name: Upload PMD reports
@@ -93,7 +92,7 @@ jobs:
           path: build/reports/pmd/
 
       - name: Run Checkstyle
-        run: ./gradlew checkstyleMain checkstyleTest
+        run: ./gradlew checkstyleMain checkstyleTest --no-daemon
         continue-on-error: true
 
       - name: Upload Checkstyle reports
@@ -104,7 +103,7 @@ jobs:
           path: build/reports/checkstyle/
 
       - name: Run ktlint
-        run: ./gradlew ktlintCheck
+        run: ./gradlew ktlintCheck --no-daemon
         continue-on-error: true
 
       - name: Upload ktlint reports
@@ -126,17 +125,19 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-          cache: 'gradle'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Stop Gradle daemons and clean
-        run: ./gradlew --stop || true
+      - name: Clean Gradle cache and daemons
+        run: |
+          ./gradlew --stop || true
+          rm -rf ~/.gradle/caches || true
+          rm -rf ~/.gradle/daemon || true
 
       - name: Run Checkstyle
-        run: ./gradlew clean checkstyleMain checkstyleTest
+        run: ./gradlew clean checkstyleMain checkstyleTest --no-daemon
 
       - name: Run ktlint
-        run: ./gradlew ktlintCheck
+        run: ./gradlew ktlintCheck --no-daemon
 

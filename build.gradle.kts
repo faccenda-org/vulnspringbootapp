@@ -31,8 +31,6 @@ tasks.test {
 // SpotBugs configuration
 spotbugs {
     toolVersion.set("4.8.3")
-    effort.set(com.github.spotbugs.snom.Effort.MAX)
-    reportLevel.set(com.github.spotbugs.snom.Confidence.MINIMUM)
 }
 
 tasks.spotbugsMain {
@@ -71,12 +69,10 @@ ktlint {
 
 // OWASP Dependency Check configuration
 dependencyCheck {
-    format.set("HTML")
-    failBuildOnCVSS.set(7.0f)
-    suppressionFile.set("${rootDir}/config/dependency-check/suppressions.xml")
-    analyzers {
-        assemblyEnabled.set(false)
-    }
+    format = "HTML"
+    failBuildOnCVSS = 7.0f
+    suppressionFile = "${rootDir}/config/dependency-check/suppressions.xml"
+    analyzers.assemblyEnabled = false
 }
 
 

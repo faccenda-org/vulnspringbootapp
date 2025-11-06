@@ -29,8 +29,16 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Stop Gradle daemons
+        run: ./gradlew --stop || true
+
+      - name: Clean Gradle cache if corrupted
+        run: |
+          rm -rf ~/.gradle/caches/jars-* || true
+          rm -rf ~/.gradle/caches/modules-* || true
+
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew clean build -x test
 
       - name: Run tests
         run: ./gradlew test
@@ -59,8 +67,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Stop Gradle daemons and clean
+        run: ./gradlew --stop || true
+
       - name: Run SpotBugs
-        run: ./gradlew spotbugsMain spotbugsTest
+        run: ./gradlew clean spotbugsMain spotbugsTest
         continue-on-error: true
 
       - name: Upload SpotBugs reports
@@ -120,8 +131,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Stop Gradle daemons and clean
+        run: ./gradlew --stop || true
+
       - name: Run Checkstyle
-        run: ./gradlew checkstyleMain checkstyleTest
+        run: ./gradlew clean checkstyleMain checkstyleTest
 
       - name: Run ktlint
         run: ./gradlew ktlintCheck

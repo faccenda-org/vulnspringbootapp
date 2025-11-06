@@ -38,7 +38,7 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-          comment-summary-in-pr: true
+          comment-summary-in-pr: true  # Adds a comment to PRs summarizing dependency issues (vulnerabilities, licenses, etc.)
           deny-licenses: ""
 
   # Note: Scheduled runs for dependency review are not necessary; Dependabot handles periodic checks.

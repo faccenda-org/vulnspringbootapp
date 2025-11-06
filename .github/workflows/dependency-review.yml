@@ -32,12 +32,5 @@ jobs:
           only-direct-dependencies: true
           deny-licenses: ""
 
-  scheduled-review:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'schedule' }}
-    schedule:
-      - cron: '0 6 * * 1' # Mondays at 06:00 UTC
-    steps:
-      - name: No-op
-        run: echo "Dependabot handles periodic scanning via alerts and updates."
+  # Note: Scheduled runs for dependency review are not necessary; Dependabot handles periodic checks.
 

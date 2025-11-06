@@ -1,5 +1,15 @@
 name: Dependency Review
 
+# Prerequisites:
+# - Dependency graph must be enabled in repository settings
+# - GitHub Advanced Security (GHAS) must be enabled for private repositories
+#   Note: GHAS is FREE for public repositories, but requires a paid plan (Team/Enterprise + security add-ons) for private repos
+#   If you don't have GHAS enabled, you can:
+#   1. Make the repository public (GHAS is free for public repos)
+#   2. Purchase GHAS for your organization (requires GitHub Team/Enterprise plan)
+#   3. Disable this workflow and use alternative dependency scanning tools
+# See: https://docs.github.com/en/code-security/dependabot/dependabot-alerts/configuring-dependabot-alerts
+
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
@@ -29,7 +39,6 @@ jobs:
         with:
           fail-on-severity: high
           comment-summary-in-pr: true
-          only-direct-dependencies: true
           deny-licenses: ""
 
   # Note: Scheduled runs for dependency review are not necessary; Dependabot handles periodic checks.

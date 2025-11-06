@@ -4,9 +4,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class VulnSpringBootAppApplication {
+public final class VulnSpringBootAppApplication {
 
-    public static void main(String[] args) {
+    private VulnSpringBootAppApplication() {
+        // Private constructor to prevent instantiation
+    }
+
+    public static void main(final String[] args) {
         SpringApplication.run(VulnSpringBootAppApplication.class, args);
     }
 }

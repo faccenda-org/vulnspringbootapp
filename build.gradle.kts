@@ -44,19 +44,12 @@ tasks.spotbugsMain {
 // PMD configuration
 pmd {
     toolVersion = "6.55.0"
-    ruleSets = listOf(
-        "category/java/bestpractices.xml",
-        "category/java/codestyle.xml",
-        "category/java/design.xml",
-        "category/java/errorprone.xml",
-        "category/java/performance.xml",
-        "category/java/security.xml"
-    )
+    ruleSetFiles = files("${rootDir}/config/pmd/ruleset.xml")
 }
 
 // Checkstyle configuration
 checkstyle {
-    toolVersion = "10.12.5"
+    toolVersion = "10.3.4"
     configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
 }
 

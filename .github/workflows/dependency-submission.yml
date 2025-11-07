@@ -29,5 +29,5 @@ jobs:
           dependency-graph: generate-and-submit
 
       - name: Build to generate dependency graph
-        run: ./gradlew build --no-daemon
+        run: ./gradlew dependencies --no-daemon
 

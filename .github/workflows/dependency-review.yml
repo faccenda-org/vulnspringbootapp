@@ -34,8 +34,8 @@ jobs:
         with:
           dependency-graph: generate-and-submit
 
-      - name: Build to generate dependency graph
-        run: ./gradlew build --no-daemon
+      - name: Resolve dependencies for graph generation
+        run: ./gradlew dependencies --no-daemon
 
   dependency-review:
     runs-on: ubuntu-latest

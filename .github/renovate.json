@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "enabledManagers": ["gradle", "github-actions"],
+  "labels": ["renovate"],
+  "dependencyDashboard": false,
+  "prConcurrentLimit": 2,
+  "prHourlyLimit": 4,
+  "rangeStrategy": "replace",
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^org.springframework.boot"],
+      "groupName": "spring-boot"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    },
+    {
+      "description": "Keep intentionally vulnerable Spring Boot pinned (no upgrade PRs)",
+      "matchPackagePatterns": ["^org.springframework.boot"],
+      "enabled": true
+    },
+    {
+      "description": "Suppress commons-text auto-fix to preserve vulnerability",
+      "matchPackageNames": ["org.apache.commons:commons-text"],
+      "enabled": false
+    }
+  ],
+  "schedule": ["before 6am on monday"],
+  "timezone": "UTC",
+  "vulnerabilityAlerts": {"enabled": true}
+}

@@ -16,6 +16,8 @@ java {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    // Intentionally vulnerable version (CVE-2022-42889 - variable interpolation RCE)
+    implementation("org.apache.commons:commons-text:1.9")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 

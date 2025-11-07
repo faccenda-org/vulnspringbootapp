@@ -1,18 +1,19 @@
 version: 2
 # Note: Dependabot security updates must be enabled in repository Settings > Security > Dependabot alerts
-# When enabled, Dependabot will automatically create PRs for vulnerable direct dependencies
+# With open-pull-requests-limit: 0, Dependabot will only create PRs for security updates
 updates:
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 0
     allow:
       - dependency-type: "direct"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 0
     allow:
       - dependency-type: "direct"
 

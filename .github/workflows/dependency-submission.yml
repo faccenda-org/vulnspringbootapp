@@ -28,3 +28,6 @@ jobs:
         with:
           dependency-graph: generate-and-submit
 
+      - name: Build to generate dependency graph
+        run: ./gradlew build --no-daemon
+

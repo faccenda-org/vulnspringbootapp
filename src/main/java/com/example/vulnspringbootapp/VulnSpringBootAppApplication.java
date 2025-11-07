@@ -6,13 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class VulnSpringBootAppApplication {
 
-    // private VulnSpringBootAppApplication() {
-    //     // Private constructor to prevent instantiation
-    // }
-    public VulnSpringBootAppApplication() {
-    }
-
-    public static void main(final String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(VulnSpringBootAppApplication.class, args);
     }
 }

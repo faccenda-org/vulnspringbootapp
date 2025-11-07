@@ -1,14 +1,7 @@
 name: Dependency Review
 
-# Prerequisites:
-# - Dependency graph must be enabled in repository settings
-# - GitHub Advanced Security (GHAS) must be enabled for private repositories
-#   Note: GHAS is FREE for public repositories, but requires a paid plan (Team/Enterprise + security add-ons) for private repos
-#   If you don't have GHAS enabled, you can:
-#   1. Make the repository public (GHAS is free for public repos)
-#   2. Purchase GHAS for your organization (requires GitHub Team/Enterprise plan)
-#   3. Disable this workflow and use alternative dependency scanning tools
-# See: https://docs.github.com/en/code-security/dependabot/dependabot-alerts/configuring-dependabot-alerts
+# This workflow blocks PRs with critical/high severity vulnerabilities
+# and adds a comment to the PR explaining the issues
 
 on:
   pull_request:
@@ -16,6 +9,7 @@ on:
     branches:
       - main
       - master
+      - develop
   workflow_dispatch:
 
 permissions:
@@ -25,21 +19,14 @@ permissions:
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
-    # Skip if PR is in draft mode
     if: github.event.pull_request.draft == false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-          comment-summary-in-pr: true  # Adds a comment to PRs summarizing dependency issues (vulnerabilities, licenses, etc.)
-          deny-licenses: ""
-
-  # Note: Scheduled runs for dependency review are not necessary; Dependabot handles periodic checks.
+          comment-summary-in-pr: always
 

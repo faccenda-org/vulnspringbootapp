@@ -1,7 +1,7 @@
 # Copilot Instructions for vulnspringbootapp
 
 ## Project Purpose
-This is an intentionally vulnerable Spring Boot application (v2.6.2) designed for testing security tools like Dependabot and dependency review workflows. The codebase deliberately contains known vulnerabilities.
+This is an intentionally vulnerable Spring Boot application (v3.0.0) designed for testing security tools like Dependabot and dependency review workflows. The codebase deliberately contains known vulnerabilities.
 
 ## Architecture Overview
 - **Minimal Spring Boot app**: Single REST controller with one endpoint
@@ -13,9 +13,13 @@ This is an intentionally vulnerable Spring Boot application (v2.6.2) designed fo
 
 ### Version Management
 All versions are in `gradle.properties`:
-- `springBootVersion=2.6.2` (**DO NOT UPDATE** - intentionally vulnerable)
+- `springBootVersion=3.0.0` (**DO NOT UPDATE** - intentionally vulnerable)
 - `springDependencyManagementVersion=1.1.6`
 - `javaVersion=17`
+
+Build system uses:
+- Gradle 8.5 (supports JDK 17-21)
+- JDK 21 for CI/CD workflows
 
 ### Build Commands
 ```bash
@@ -54,8 +58,12 @@ Configuration in `.github/workflows/dependency-review.yml`:
 
 ### CI Workflow
 - Runs on push/PR to main/master/develop
-- Uses JDK 17 with Amazon Corretto
+- Uses JDK 21 with Amazon Corretto
 - Command: `./gradlew clean build --no-daemon`
+
+### Dependency Submission Workflow
+- Uses Gradle 8.5 with JDK 21
+- Submits dependency graph via `gradle/actions/setup-gradle@v4`
 
 ## Code Structure
 

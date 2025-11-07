@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.apache.commons.text.StringSubstitutor;
+import org.apache.commons.text.StringEscapeUtils;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,7 +18,7 @@ public class HelloController {
         Map<String, String> values = new HashMap<>();
         values.put("user", "World");
         // In vulnerable versions, certain lookup patterns (like script, dns, url) could be exploited
-        return new StringSubstitutor(values).replace(base);
+        return StringEscapeUtils.escapeHtml4(new StringSubstitutor(values).replace(base));
     }
 }
 

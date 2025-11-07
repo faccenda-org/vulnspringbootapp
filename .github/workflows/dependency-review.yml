@@ -13,16 +13,37 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
+  submit-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          dependency-graph: generate-and-submit
+
+      - name: Resolve dependencies for graph generation
+        run: ./gradlew dependencies --no-daemon
+
   dependency-review:
     runs-on: ubuntu-latest
+    needs: submit-dependencies
     if: github.event.pull_request.draft == false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4

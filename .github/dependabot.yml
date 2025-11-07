@@ -7,13 +7,17 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 0
+    # Allow both direct and indirect so security fixes for transitive vulnerabilities generate PRs
     allow:
       - dependency-type: "direct"
+      - dependency-type: "indirect"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 0
+    # Actions rarely have "indirect" dependencies in the same sense, but include for consistency
     allow:
       - dependency-type: "direct"
+      - dependency-type: "indirect"
 

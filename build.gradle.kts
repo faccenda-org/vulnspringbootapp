@@ -8,8 +8,9 @@ group = "com.example"
 version = "0.0.1-SNAPSHOT"
 
 java {
+    val javaVersion = providers.gradleProperty("javaVersion").get().toInt()
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(javaVersion))
     }
 }
 

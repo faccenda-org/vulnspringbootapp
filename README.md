@@ -28,3 +28,16 @@ If you want to update locked versions (e.g., to introduce or demonstrate new adv
 
 Note: We still avoid upgrading core vulnerable dependencies unless explicitly demonstrating an update workflow. Security PRs from Dependabot or Renovate may be closed intentionally to keep the vulnerable state.
 
+### Forcing a Vulnerable Version
+Occasionally Spring Boot's dependency management (BOM) or other plugin constraints may attempt to substitute a newer version of a library. To retain an intentionally vulnerable version (e.g. `commons-text:1.9`) we add a `resolutionStrategy.force` entry:
+
+```
+configurations.all {
+	resolutionStrategy {
+		force("org.apache.commons:commons-text:1.9")
+	}
+}
+```
+
+This guarantees the build keeps the vulnerable coordinate even when transitive constraints suggest an upgrade. Remove this block when you want normal upgrade behavior restored.
+

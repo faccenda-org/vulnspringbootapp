@@ -27,6 +27,13 @@ tasks.test {
     useJUnitPlatform()
 }
 
+configurations.all {
+    resolutionStrategy {
+        // Force intentionally vulnerable commons-text version even if dependency management pushes a newer one
+        force("org.apache.commons:commons-text:1.9")
+    }
+}
+
 dependencyLocking {
     lockAllConfigurations()
 }

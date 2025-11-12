@@ -15,14 +15,11 @@ java {
 }
 
 dependencies {
-    // Explicit version pin so Dependabot can propose security upgrade PRs
     val springBootVersion = providers.gradleProperty("springBootVersion").get()
     implementation("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
-    // Intentionally vulnerable version (CVE-2022-42889 - variable interpolation RCE)
-    implementation("org.apache.commons:commons-text:1.10.0")
-    testImplementation("org.springframework.boot:spring-boot-starter-test:$springBootVersion")
+    implementation("org.apache.commons:commons-text:1.9")
 }
 
-tasks.test {
-    useJUnitPlatform()
+dependencyLocking {
+    lockAllConfigurations()
 }

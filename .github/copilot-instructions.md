@@ -1,7 +1,7 @@
 # Copilot Instructions for vulnspringbootapp
 
 ## Project Purpose
-This is an intentionally vulnerable Spring Boot application (v3.0.0) designed for testing security tools like Dependabot and dependency review workflows. The codebase deliberately contains known vulnerabilities.
+This is an intentionally vulnerable Spring Boot application (baseline Spring Boot v3.1.5) designed for testing security tools like Dependabot, Renovate, CodeQL, and dependency review workflows. The codebase deliberately contains known vulnerabilities. Spring Boot 3.1.5 is chosen as the earliest release with official Java 21 support while still carrying known transitive CVEs.
 
 ## Architecture Overview
 - **Minimal Spring Boot app**: Single REST controller with one endpoint
@@ -13,9 +13,9 @@ This is an intentionally vulnerable Spring Boot application (v3.0.0) designed fo
 
 ### Version Management
 All versions are in `gradle.properties`:
-- `springBootVersion=3.0.0` (**DO NOT UPDATE** - intentionally vulnerable)
+- `springBootVersion=3.1.5` (**DO NOT UPDATE FURTHER** - intentionally vulnerable baseline)
 - `springDependencyManagementVersion=1.1.6`
-- `javaVersion=17`
+- `javaVersion=21`
 
 Build system uses:
 - Gradle 8.5 (supports JDK 17-21)
@@ -30,7 +30,7 @@ Build system uses:
 ## Critical Rules
 
 ### Security Vulnerabilities Are Intentional
-- **NEVER** update Spring Boot version or fix security vulnerabilities
+- **NEVER** update Spring Boot version beyond 3.1.5 or fix security vulnerabilities
 - **NEVER** add security hardening (authentication, input validation, etc.)
 - This app exists to trigger Dependabot alerts and test dependency review workflows
 - Expect security scanners to report issues—this is the desired state
@@ -38,7 +38,7 @@ Build system uses:
 ### Keep It Simple
 - No service layer, repositories, or DTOs
 - No test coverage
-- Only dependency: `spring-boot-starter-web`
+- Only direct dependencies: `spring-boot-starter-web` and one intentionally vulnerable library (e.g. `commons-text:1.9`)
 - Single controller with minimal logic
 
 ## Dependency Management & CI/CD
@@ -92,5 +92,6 @@ public class HelloController {
 - Add controllers directly in root package
 - Keep endpoints simple (no business logic)
 - Do not add security measures
-- Do not add dependencies unless absolutely necessary
-- Maintain the vulnerable state for testing purposes
+- Avoid adding dependencies unless absolutely necessary
+- Maintain the vulnerable state (intentionally outdated/vulnerable versions)
+    - If a dependency is upgraded by automated tooling and reduces vulnerability coverage, prefer reverting unless demonstrating an upgrade scenario.

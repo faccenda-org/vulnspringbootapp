@@ -26,3 +26,7 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+dependencyLocking {
+    lockAllConfigurations()
+}

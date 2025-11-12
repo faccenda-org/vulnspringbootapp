@@ -8,9 +8,8 @@ group = "com.example"
 version = "0.0.1-SNAPSHOT"
 
 java {
-    // Use Java 17 toolchain (Spring Boot 3.0 baseline; avoids class file version 65 incompatibility here)
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 

@@ -21,5 +21,7 @@ jobs:
         with:
           renovate-version: latest
           token: ${{ secrets.GITHUB_TOKEN }}
+          configurationFile: .github/renovate.json
         env:
-          LOG_LEVEL: info
+          LOG_LEVEL: debug
+          RENOVATE_REPOSITORIES: ${{ github.repository }}

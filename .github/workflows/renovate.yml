@@ -20,8 +20,7 @@ jobs:
         uses: renovatebot/github-action@v44.0.0
         with:
           renovate-version: latest
-          token: ${{ secrets.GITHUB_TOKEN }} # Use built-in token; PAT not required for single repo
-          repositories: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           configurationFile: .github/renovate.json
         env:
           LOG_LEVEL: debug

@@ -17,7 +17,7 @@ java {
 dependencies {
     val springBootVersion = providers.gradleProperty("springBootVersion").get()
     implementation("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
-    implementation("org.apache.commons:commons-text:1.9")
+    implementation("org.apache.commons:commons-text:1.14.0")
 }
 
 dependencyLocking {

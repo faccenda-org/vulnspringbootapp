@@ -221,6 +221,29 @@ def main(argv: list[str]) -> int:
         write_output("MERGE_ALLOWED", "true")
         append_summary("Decision: auto-merge enabled when checks pass")
         print("Allowed: auto-merge can be enabled")
+        # Post criteria comment (avoid duplicates)
+        try:
+            existing = list(issue.get_comments())
+            marker = "<!-- dependabot-auto-merge-success -->"
+            if not any(marker in (c.body or "") for c in existing):
+                merge_method = os.environ.get("MERGE_METHOD", "squash")
+                if upgrade_type == "patch":
+                    rationale = "upgrade type is patch"
+                elif upgrade_type == "minor" and compat_score is not None:
+                    rationale = f"minor upgrade with compatibility score {compat_score}% >= threshold {threshold}%"
+                else:
+                    rationale = "meets configured criteria"
+                comment_body = (
+                    marker + "\n"
+                    + f"Auto-merge will be enabled because {rationale}.\n\n"
+                    + "**Decision Details**\n"
+                    + "- " + "\n- ".join(reason_parts) + "\n"
+                    + f"- merge method: `{merge_method}`\n"
+                    + "\nNative auto-merge will proceed after required checks pass."
+                )
+                issue.create_comment(comment_body)
+        except Exception:
+            pass
         if args.enable_automerge:
             merge_method = os.environ.get("MERGE_METHOD", "squash")
             try:

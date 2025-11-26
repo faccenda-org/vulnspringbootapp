@@ -61,9 +61,10 @@ jobs:
           python scripts/auto_merge.py
 
       - name: Enable PR auto-merge
-        if: ${{ steps.decision.outputs.MERGE_ALLOWED == 'true' }}
+        if: ${{ steps.decision.outputs.MERGE_ALLOWED == 'true' && github.event.pull_request.number }}
         uses: peter-evans/enable-pull-request-automerge@v3
         with:
+          pull-request-number: ${{ github.event.pull_request.number }}
           merge-method: ${{ env.MERGE_METHOD }}
 
       - name: Output summary

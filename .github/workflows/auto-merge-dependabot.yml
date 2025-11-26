@@ -25,7 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Skip workflow for non-Dependabot actors
-        run: echo "Skipping: actor is not Dependabot and this is not a manual dispatch."
+        run: |
+          echo "Skipping - actor is not Dependabot and not a manual dispatch"
 
   check-and-merge:
     if: ${{ github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch' }}

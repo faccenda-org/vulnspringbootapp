@@ -20,20 +20,13 @@ env:
   NO_AUTO_MERGE_LABEL: no-auto-merge
 
 jobs:
-  debug-auto-merge:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Debug auto-merge
-        run: |
-          echo "Debugging auto-merge workflow"
-
   skip-non-dependabot:
     if: ${{ github.event_name != 'workflow_dispatch' && (github.event.pull_request.user.login != 'dependabot[bot]' || !startsWith(github.event.pull_request.head.ref, 'dependabot/')) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Skip workflow for non-Dependabot actors
+      - name: Skip workflow for non-Dependabot PRs
         run: |
-          echo "Skipping - actor is not Dependabot and not a manual dispatch. Actor: ${{ github.actor }} - Event name: ${{ github.event_name }}"
+          echo "Skipping - Not a Dependabot PR or manual dispatch. Actor: ${{ github.event.pull_request.user.login }} - Event name: ${{ github.event_name }}"
 
   check-and-merge:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event.pull_request.user.login == 'dependabot[bot]' && startsWith(github.event.pull_request.head.ref, 'dependabot/')) }}

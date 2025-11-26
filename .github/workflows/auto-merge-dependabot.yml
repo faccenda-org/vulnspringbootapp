@@ -37,9 +37,10 @@ jobs:
 
       - name: Disable PR auto-merge if already enabled
         if: ${{ github.event.pull_request.number }}
-        uses: peter-evans/disable-pull-request-automerge@v3
-        with:
-          pull-request-number: ${{ github.event.pull_request.number }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr auto-merge disable ${{ github.event.pull_request.number }} || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -61,10 +62,10 @@ jobs:
 
       - name: Enable PR auto-merge
         if: ${{ steps.decision.outputs.MERGE_ALLOWED == 'true' && github.event.pull_request.number }}
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: ${{ env.MERGE_METHOD }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --auto --${{ env.MERGE_METHOD }}
 
       - name: Output summary
         if: always()

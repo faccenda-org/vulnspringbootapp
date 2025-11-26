@@ -95,3 +95,44 @@ public class HelloController {
 - Avoid adding dependencies unless absolutely necessary
 - Maintain the vulnerable state (intentionally outdated/vulnerable versions)
     - If a dependency is upgraded by automated tooling and reduces vulnerability coverage, prefer reverting unless demonstrating an upgrade scenario.
+
+## Code Simplicity Rules
+- Prefer the smallest change that achieves the goal.
+- Avoid abstractions, layers, or patterns unless they reduce code size and clarify behavior.
+- **Always** keep functions short and explicit; return early on non-happy paths.
+- Favor standard library over third-party where practical.
+- Comments: Only add in-code comments when behavior is non-obvious or unexpected. Code should be simple enough to make the "what" clear; comments should explain "why" we are doing it this way, not restate "how".
+
+## Python Guidelines (scripts/auto_merge.py)
+- Dependencies: use `PyGithub` only; install via `pip install PyGithub` in workflows.
+- Logging: use the `logging` stdlib with `LOG_LEVEL` env to control verbosity (default `INFO`; allow `DEBUG`).
+- Inputs: read Actions event payload from `GITHUB_EVENT_PATH`; prefer PR author and head ref over `github.actor`.
+- Configuration precedence: `workflow_dispatch.inputs.compat_threshold` → `DEPENDABOT_COMPAT_THRESHOLD` env → `DEFAULT_COMPAT_THRESHOLD` env → fallback `80`.
+- Outputs: write plain `key=value` to `GITHUB_OUTPUT`; append brief lines to `GITHUB_STEP_SUMMARY`.
+- Robust parsing: support Dependabot title formats (optional backticks, 2- or 3-part versions, optional leading `v`).
+- Decisions: allow auto-merge for patch; for minor only if compatibility score ≥ threshold; otherwise request manual review.
+- Idempotence: use comment markers to avoid duplicate postings; never fail the workflow on comment errors.
+- Environment: require `GITHUB_TOKEN`; do not read secrets beyond what the workflow passes.
+- Keep functions single-responsibility (parse, compute, comment) and avoid classes.
+- Functions shouldn't exceed ~30 lines; break down complex logic.
+
+## GitHub Actions Guidelines (Workflows)
+- Triggers: use `pull_request_target` for PRs (Dependabot requires this) and `workflow_dispatch` for manual runs.
+- Permissions: set least privilege (`contents: write`, `pull-requests: write`); avoid broad default permissions.
+- Checkout: always include `actions/checkout@v4` before running repo scripts.
+- Python: use `actions/setup-python@v5`; pin to `'3.x'` and `pip install PyGithub`.
+- Conditions: gate jobs on PR author/login and branch prefix (`dependabot/`), not `github.actor`.
+- Dispatch inputs: pass `compat_threshold` via step `env`; let the script handle defaults (avoid `||` expressions in YAML).
+- Step ordering: disable auto-merge first (clean slate) then decide and optionally enable native auto-merge.
+- Auto-merge: prefer native enabling via `peter-evans/enable-pull-request-automerge@v3`; guard with `MERGE_ALLOWED` and ensure a valid PR number. Use `disable-pull-request-automerge@v3` at job start.
+- Runner efficiency: do not hold runners waiting for checks; enable native auto-merge and exit.
+- Summary: write concise decision summaries; avoid verbose logs in the summary.
+
+## Simplicity for Expressions
+- Avoid complex GitHub expressions in `env:` (e.g., `||`). Instead, pass raw inputs and handle fallback in Python.
+- Use `startsWith(...)` and direct event fields (`github.event.pull_request.user.login`, `github.event.pull_request.head.ref`).
+- Prefer explicit `pull-request-number` when using PR actions to prevent context ambiguity.
+
+## Non-Goals
+- Do not add tests or CI stages beyond what’s necessary for dependency review workflows.
+- Do not add security hardening; vulnerabilities are intentional for tooling validation.

@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import logging
 from typing import Optional, Tuple
 
 try:
@@ -29,11 +30,15 @@ def parse_version(v: str) -> Optional[Tuple[int, int, int]]:
 
 
 def get_upgrade_type(title: str) -> str:
-    bump = re.search(r"Bump\s+.+\s+from\s+([0-9]+\.[0-9]+\.[0-9]+)\s+to\s+([0-9]+\.[0-9]+\.[0-9]+)", title, re.IGNORECASE)
+    logging.debug(f"PR title: {title}")
+    bump = re.search(r"bump\s+.+\s+from\s+([0-9]+\.[0-9]+\.[0-9]+)\s+to\s+([0-9]+\.[0-9]+\.[0-9]+)", title, re.IGNORECASE)
     if not bump:
+        logging.debug("No version bump pattern matched in title")
         return "unknown"
     from_v = parse_version(bump.group(1))
     to_v = parse_version(bump.group(2))
+    logging.debug(f"Regex groups: from='{bump.group(1)}' to='{bump.group(2)}'")
+    logging.debug(f"Parsed versions: from={from_v} to={to_v}")
     if not from_v or not to_v:
         return "unknown"
     if to_v[0] != from_v[0]:
@@ -64,6 +69,7 @@ def get_compat_score(body: str) -> Optional[int]:
 def read_event() -> Optional[dict]:
     path = os.environ.get("GITHUB_EVENT_PATH")
     if path and os.path.exists(path):
+        logging.debug(f"Reading GitHub event payload from {path}")
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return None
@@ -87,6 +93,7 @@ def load_threshold(event_inputs: Optional[dict]) -> int:
     dispatch = None
     if isinstance(event_inputs, dict):
         dispatch = event_inputs.get("compat_threshold")
+        logging.debug(f"Workflow dispatch input compat_threshold: {dispatch}")
     threshold_str = (
         (dispatch if dispatch else None)
         or os.environ.get("DEPENDABOT_COMPAT_THRESHOLD")
@@ -94,8 +101,11 @@ def load_threshold(event_inputs: Optional[dict]) -> int:
         or "80"
     )
     try:
-        return int(threshold_str)
+        threshold_val = int(threshold_str)
+        logging.debug(f"Resolved compatibility threshold: {threshold_val}")
+        return threshold_val
     except ValueError:
+        logging.warning(f"Invalid threshold value '{threshold_str}', defaulting to 80")
         return 80
 
 
@@ -118,6 +128,7 @@ def resolve_pr_context(args: argparse.Namespace, token: str) -> tuple[str, int, 
         title = event["pull_request"].get("title") or ""
         body = event["pull_request"].get("body") or ""
         author_login = event["pull_request"].get("user", {}).get("login") or ""
+        logging.info(f"Event PR context: repo={repo_full}, pr={pr_number}, author={author_login}")
         return repo_full, pr_number, title, body, author_login, inputs
     # Local mode
     pr_ref = os.environ.get("PR_REF")
@@ -134,6 +145,7 @@ def resolve_pr_context(args: argparse.Namespace, token: str) -> tuple[str, int, 
     title = pr_obj.title or ""
     body = pr_obj.body or ""
     author_login = pr_obj.user.login or ""
+    logging.info(f"Local PR context: repo={repo_full}, pr={pr_number}, author={author_login}")
     return repo_full, int(pr_number), title, body, author_login, inputs
 
 
@@ -146,7 +158,11 @@ def build_reasons(upgrade_type: str, compat_score: Optional[int], threshold: int
 
 
 def compute_decision(upgrade_type: str, compat_score: Optional[int], threshold: int) -> bool:
-    return (upgrade_type == "patch") or (upgrade_type == "minor" and compat_score is not None and compat_score >= threshold)
+    decision = (upgrade_type == "patch") or (upgrade_type == "minor" and compat_score is not None and compat_score >= threshold)
+    logging.debug(
+        f"Decision compute: upgrade_type={upgrade_type}, compat_score={compat_score}, threshold={threshold} -> should_merge={decision}"
+    )
+    return decision
 
 
 def connect_github(token: str, repo_full: str, pr_number: int):
@@ -154,12 +170,14 @@ def connect_github(token: str, repo_full: str, pr_number: int):
     repo = gh.get_repo(repo_full)
     issue = repo.get_issue(number=pr_number)
     pr_obj = repo.get_pull(number=pr_number)
+    logging.debug("Connected to GitHub and fetched issue/PR objects")
     return repo, issue, pr_obj
 
 
 def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
     skip_label = (os.environ.get("NO_AUTO_MERGE_LABEL", "no-auto-merge") or "no-auto-merge").lower()
     label_names = [lbl.name for lbl in pr_obj.get_labels()]
+    logging.debug(f"PR labels: {label_names}; skip_label={skip_label}")
     if skip_label in [name.lower() for name in label_names]:
         issue.create_comment(
             (
@@ -187,9 +205,15 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
     append_summary("Result: manual review requested (comment posted)")
     write_output("MERGE_ALLOWED", "false")
     print("Manual review required")
+    logging.info("Posted manual review comment")
 
 
 def main(argv: list[str]) -> int:
+    # Basic logging setup
+    logging.basicConfig(
+        level=os.environ.get("LOG_LEVEL", "INFO"),
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
     args = parse_args(argv)
     if args.compat_threshold is not None:
         os.environ["DEPENDABOT_COMPAT_THRESHOLD"] = str(args.compat_threshold)
@@ -210,10 +234,14 @@ def main(argv: list[str]) -> int:
     threshold = load_threshold(inputs)
     reason_parts = build_reasons(upgrade_type, compat_score, threshold)
     should_merge = compute_decision(upgrade_type, compat_score, threshold)
+    logging.info(
+        f"Parsed PR: upgrade_type={upgrade_type}, compat_score={compat_score}, threshold={threshold}, should_merge={should_merge}, author={author_login}"
+    )
 
     _, issue, pr_obj = connect_github(token, repo_full, pr_number)
 
     if handle_skip_label(pr_obj, issue, reason_parts):
+        logging.info("Skipping due to label")
         return 0
 
     is_dependabot = (author_login.lower() == "dependabot[bot]")
@@ -221,6 +249,7 @@ def main(argv: list[str]) -> int:
         write_output("MERGE_ALLOWED", "true")
         append_summary("Decision: auto-merge enabled when checks pass")
         print("Allowed: auto-merge can be enabled")
+        logging.info("Merge allowed; posting success criteria comment")
         # Post criteria comment (avoid duplicates)
         try:
             existing = list(issue.get_comments())
@@ -242,7 +271,9 @@ def main(argv: list[str]) -> int:
                     + "\nNative auto-merge will proceed after required checks pass."
                 )
                 issue.create_comment(comment_body)
+                logging.info("Posted success criteria comment")
         except Exception:
+            logging.exception("Failed posting success criteria comment")
             pass
         if args.enable_automerge:
             merge_method = os.environ.get("MERGE_METHOD", "squash")
@@ -254,6 +285,7 @@ def main(argv: list[str]) -> int:
                         + f"- merge method: `{merge_method}`\n"
                     )
                 )
+                logging.info("Posted local auto-merge settings comment")
             except Exception as exc:
                 issue.create_comment(
                     (
@@ -265,6 +297,7 @@ def main(argv: list[str]) -> int:
                         + "</details>\n"
                     )
                 )
+                logging.exception("Failed to enable auto-merge in local mode")
         return 0
 
     post_manual_review(issue, reason_parts)

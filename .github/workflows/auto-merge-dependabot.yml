@@ -45,7 +45,7 @@ jobs:
         id: decision
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMPAT_THRESHOLD: ${{ github.event.inputs.compat_threshold || env.DEFAULT_COMPAT_THRESHOLD }}
+          COMPAT_THRESHOLD: ${{ github.event.inputs.compat_threshold }}
         run: |
           python scripts/auto_merge.py
 

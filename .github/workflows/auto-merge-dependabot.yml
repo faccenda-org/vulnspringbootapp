@@ -20,8 +20,23 @@ env:
   NO_AUTO_MERGE_LABEL: no-auto-merge
 
 jobs:
+  debug-auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug auto-merge
+        run: |
+          echo "Debugging auto-merge workflow"
+
+  skip-non-dependabot:
+    if: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip workflow for non-Dependabot actors
+        run: |
+          echo "Skipping - actor is not Dependabot and not a manual dispatch"
+
   check-and-merge:
-    if: github.actor == 'dependabot[bot]'
+    if: ${{ github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -38,8 +53,15 @@ jobs:
         id: decision
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPAT_THRESHOLD: ${{ github.event.inputs.compat_threshold }}
         run: |
           python scripts/auto_merge.py
+
+      - name: Enable PR auto-merge
+        if: ${{ steps.decision.outputs.MERGE_ALLOWED == 'true' }}
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          merge-method: ${{ env.MERGE_METHOD }}
 
       - name: Output summary
         if: always()

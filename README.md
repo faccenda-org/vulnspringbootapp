@@ -15,5 +15,36 @@ Occasionally Spring Boot's dependency management (BOM) or other plugin constrain
 configurations.all { resolutionStrategy.force("org.apache.commons:commons-text:1.9") }
 ```
 
+## Auto-merge Dependabot Workflow
+- File: `.github/workflows/auto-merge-dependabot.yml`
+- Runs on `pull_request_target` for Dependabot PRs and:
+	- Detects semver change type from the PR title.
+	- Extracts compatibility score from the PR body.
+	- Merges automatically when:
+		- Patch updates; or
+		- Minor updates with compatibility score ≥ threshold.
+	- Otherwise, comments that manual review is required.
+	- If merge fails, comments with error details.
+
+### Configuration
+- `MERGE_METHOD`: Merge strategy (`squash`, `merge`, `rebase`). Default: `squash`.
+- `DEFAULT_COMPAT_THRESHOLD`: Default compatibility threshold percentage. Default: `80`.
+- `vars.DEPENDABOT_COMPAT_THRESHOLD`: Optional repository variable to override threshold.
+- `NO_AUTO_MERGE_LABEL`: Label name to skip auto-merge. Default: `no-auto-merge`.
+ - Manual test override via `workflow_dispatch` input `compat_threshold`.
+
+### Notes
+- Uses `pull_request_target` and the workflow's `GITHUB_TOKEN` with `contents: write` and `pull-requests: write`.
+- Supports Dependabot PR title format: `Bump <pkg> from X.Y.Z to A.B.C`.
+
+#### Setting the repository variable
+- In GitHub: Settings → Secrets and variables → Actions → Variables → New variable
+- Name: `DEPENDABOT_COMPAT_THRESHOLD`, Value: e.g., `85`
+
+#### Manual test run
+```bash
+gh workflow run auto-merge-dependabot.yml -f compat_threshold=90
+```
+
 This guarantees the build keeps the vulnerable coordinate even when transitive constraints suggest an upgrade. Remove this block when you want normal upgrade behavior restored.
 

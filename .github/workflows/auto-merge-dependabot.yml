@@ -3,6 +3,12 @@ name: Auto-merge Dependabot PRs
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      compat_threshold:
+        description: "Override compatibility threshold (percent) for this run"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -10,12 +16,6 @@ permissions:
 
 env:
   MERGE_METHOD: squash
-  workflow_dispatch:
-    inputs:
-      compat_threshold:
-        description: "Override compatibility threshold (percent) for this run"
-        required: false
-        type: string
   DEFAULT_COMPAT_THRESHOLD: "80"
   NO_AUTO_MERGE_LABEL: no-auto-merge
 
@@ -73,11 +73,7 @@ jobs:
                 upgrade_type = 'patch'
 
           compat_score = None
-          # Allow manual dispatch input to override threshold for testing
-          dispatch_threshold = event.get('inputs', {}).get('compat_threshold') if isinstance(event.get('inputs'), dict) else None
           re_list = [
-            dispatch_threshold
-            or os.environ.get('DEPENDABOT_COMPAT_THRESHOLD')
             re.compile(r'Compatibility\s+score\s*[:|-]?\s*(\d{1,3})%', re.IGNORECASE),
             re.compile(r'Update\s+confidence[\s\S]*?(\d{1,3})%', re.IGNORECASE),
             re.compile(r'Confidence[\s\S]*?(\d{1,3})%', re.IGNORECASE),
@@ -91,7 +87,15 @@ jobs:
               except ValueError:
                 pass
 
-          threshold_str = os.environ.get('DEPENDABOT_COMPAT_THRESHOLD') or os.environ.get('DEFAULT_COMPAT_THRESHOLD') or '80'
+          # Allow manual dispatch input to override threshold for testing
+          dispatch_inputs = event.get('inputs') if isinstance(event.get('inputs'), dict) else {}
+          dispatch_threshold = dispatch_inputs.get('compat_threshold')
+          threshold_str = (
+            (dispatch_threshold if dispatch_threshold else None)
+            or os.environ.get('DEPENDABOT_COMPAT_THRESHOLD')
+            or os.environ.get('DEFAULT_COMPAT_THRESHOLD')
+            or '80'
+          )
           try:
             threshold = int(threshold_str)
           except ValueError:

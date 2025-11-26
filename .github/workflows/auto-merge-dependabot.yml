@@ -20,6 +20,13 @@ env:
   NO_AUTO_MERGE_LABEL: no-auto-merge
 
 jobs:
+  debug-auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug auto-merge
+        run: |
+          echo "Debugging auto-merge workflow"
+
   skip-non-dependabot:
     if: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'workflow_dispatch' }}
     runs-on: ubuntu-latest

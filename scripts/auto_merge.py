@@ -31,13 +31,14 @@ def parse_version(v: str) -> Optional[Tuple[int, int, int]]:
 
 
 def get_upgrade_type(title: str) -> str:
+    logging.debug(f"Parsing upgrade type from title: {title}")
     bump = re.search(
         r"bump\s+.+\s+from\s+([0-9]+\.[0-9]+\.[0-9]+)\s+to\s+([0-9]+\.[0-9]+\.[0-9]+)",
         title,
         re.IGNORECASE,
     )
     if not bump:
-        return "unknown"
+        return "not-semver"
     from_v = parse_version(bump.group(1))
     to_v = parse_version(bump.group(2))
     logging.debug(
@@ -403,7 +404,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
 
 def setup_logging() -> None:
     logging.basicConfig(
-        level=os.environ.get("LOG_LEVEL", "INFO"),
+        level=os.environ.get("LOG_LEVEL", "DEBUG"),
         format="%(asctime)s %(levelname)s %(message)s",
     )
 

@@ -26,3 +26,9 @@ dependencies {
     // Intentionally vulnerable: dom4j 2.1.3 has XXE (CVE-2020-10683), patch available in 2.1.4
     implementation("org.dom4j:dom4j:2.1.3")
 }
+
+configurations {
+    compileClasspath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}

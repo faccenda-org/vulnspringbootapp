@@ -218,7 +218,7 @@ def compute_decision(
 ) -> bool:
     decision = (upgrade_type == "patch") or (
         upgrade_type == "minor"
-        and compat_score is not None
+        and isinstance(compat_score, int)
         and compat_score >= threshold
     )
     logging.debug(

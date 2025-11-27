@@ -40,7 +40,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr auto-merge disable ${{ github.event.pull_request.number }} || true
+          gh pr merge --disable-auto ${{ github.event.pull_request.number }} || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -65,7 +65,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --auto --${{ env.MERGE_METHOD }}
+          gh pr merge --auto ${{ github.event.pull_request.number }} --${{ env.MERGE_METHOD }}
 
       - name: Output summary
         if: always()

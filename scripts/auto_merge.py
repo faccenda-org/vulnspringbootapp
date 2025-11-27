@@ -49,11 +49,11 @@ def get_upgrade_type(title: str) -> str:
     if not from_v or not to_v:
         return "unknown"
     if to_v[0] != from_v[0]:
-        return "major"
+        return "Major"
     if to_v[1] != from_v[1]:
-        return "minor"
+        return "Minor"
     if to_v[2] != from_v[2]:
-        return "patch"
+        return "Patch"
     return "unknown"
 
 
@@ -209,17 +209,17 @@ def build_reasons(
     upgrade_type: str, compat_score: Optional[int], threshold: int
 ) -> list[str]:
     return [
-        f"upgrade type: {upgrade_type}",
-        f"compatibility score: {str(compat_score) + '%' if compat_score is isinstance(compat_score, int) else ''}",
-        f"threshold: {threshold}%",
+        f"Upgrade type: {upgrade_type}",
+        f"Current Compatibility score: {str(compat_score)} {'%' if compat_score is isinstance(compat_score, int) else ''}",
+        f"Minimal Compatibility score: {threshold}%",
     ]
 
 
 def compute_decision(
     upgrade_type: str, compat_score: Optional[int], threshold: int
 ) -> bool:
-    decision = (upgrade_type == "patch") or (
-        upgrade_type == "minor"
+    decision = (upgrade_type == "Patch") or (
+        upgrade_type == "Minor"
         and isinstance(compat_score, int)
         and compat_score >= threshold
     )
@@ -301,7 +301,7 @@ def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
     if skip_label in [name.lower() for name in label_names]:
         issue.create_comment(
             (
-                f"⛔ **Skipping auto-merge** due to `{skip_label}` label\n\n"
+                f"## ⛔ **Skipping auto-merge** due to `{skip_label}` label\n\n"
                 + "### 📋 Decision Details\n"
                 + "\n".join(f"- {part}" for part in reason_parts)
             )
@@ -319,7 +319,7 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
     body = (
         marker
         + "\n"
-        + "👀 **Manual review required**\n\n"
+        + "## 👀 **Manual review required**\n\n"
         + "This PR doesn't meet the auto-merge criteria.\n\n"
         + "### 📋 Decision Details\n"
         + "\n".join(f"- {part}" for part in reason_parts)
@@ -351,16 +351,16 @@ def post_success_comment(
     existing = list(issue.get_comments())
     marker = "<!-- dependabot-auto-merge-success -->"
     merge_method = os.environ.get("MERGE_METHOD", "squash")
-    if upgrade_type == "patch":
+    if upgrade_type == "Patch":
         rationale = "🩹 patch upgrade"
-    elif upgrade_type == "minor" and compat_score is not None:
+    elif upgrade_type == "Minor" and compat_score is not None:
         rationale = f"✨ minor upgrade with compatibility score **{compat_score}%** ≥ threshold **{threshold}%**"
     else:
         rationale = "✅ meets configured criteria"
     comment_body = (
         marker
         + "\n"
-        + f"🚀 **Auto-merge enabled** — {rationale}\n\n"
+        + f"## 🚀 **Auto-merge enabled** — {rationale}\n\n"
         + "### 📋 Decision Details\n"
         + "\n".join(f"- {part}" for part in reason_parts)
         + "\n"
@@ -384,7 +384,7 @@ def local_automerge_note(issue) -> None:
     merge_method = os.environ.get("MERGE_METHOD", "squash")
     issue.create_comment(
         (
-            "🧪 **Local run simulation**\n\n"
+            "## 🧪 **Local run simulation**\n\n"
             + "Would enable auto-merge in production.\n\n"
             + "### ⚙️ Settings\n"
             + f"- **Merge method:** `{merge_method}`"
@@ -416,7 +416,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
             import traceback
             error_details = traceback.format_exc()
             issue.create_comment(
-                f"⚠️ **Warning**: Failed to disable auto-merge\n\n"
+                f"## ⚠️ **Warning**: Failed to disable auto-merge\n\n"
                 f"This is usually not critical, but you may want to check the PR settings.\n\n"
                 f"<details>\n<summary>📋 Error details</summary>\n\n"
                 f"```\n{error_details}\n```\n</details>"
@@ -443,7 +443,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                 import traceback
                 error_details = traceback.format_exc()
                 issue.create_comment(
-                    f"❌ **Error**: Failed to enable auto-merge\n\n"
+                    f"## ❌ **Error**: Failed to enable auto-merge\n\n"
                     f"The PR meets the criteria for auto-merge, but enabling it failed. "
                     f"You may need to enable it manually or merge the PR directly.\n\n"
                     f"<details>\n<summary>📋 Full error message</summary>\n\n"
@@ -462,7 +462,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                 import traceback
                 error_details = traceback.format_exc()
                 issue.create_comment(
-                    f"⚠️ **Warning**: Auto-merge was enabled, but failed to post details comment\n\n"
+                    f"## ⚠️ **Warning**: Auto-merge was enabled, but failed to post details comment\n\n"
                     f"Auto-merge is active and will proceed when checks pass.\n\n"
                     f"<details>\n<summary>📋 Error details</summary>\n\n"
                     f"```\n{error_details}\n```\n</details>"
@@ -478,7 +478,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                     import traceback
                     error_details = traceback.format_exc()
                     issue.create_comment(
-                        f"⚠️ **Warning**: Local run simulation failed to post note\n\n"
+                        f"## ⚠️ **Warning**: Local run simulation failed to post note\n\n"
                         f"<details>\n<summary>📋 Error details</summary>\n\n"
                         f"```\n{error_details}\n```\n</details>"
                     )

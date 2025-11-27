@@ -20,8 +20,7 @@ dependencies {
     implementation("org.apache.commons:commons-text:1.9")
     // Intentionally vulnerable: jackson-databind 2.13.1 has multiple CVEs
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
-}
-
-dependencyLocking {
-    lockAllConfigurations()
+    // Intentionally vulnerable: log4j-core 2.14.1 has Log4Shell (CVE-2021-44228)
+    implementation("org.apache.logging.log4j:log4j-core:2.14.1")
+    implementation("org.apache.logging.log4j:log4j-api:2.14.1")
 }

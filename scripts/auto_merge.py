@@ -128,6 +128,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--repo", help="Repository in the form owner/repo")
     parser.add_argument("--pr", type=int, help="Pull request number")
     parser.add_argument(
+        "--pr-url",
+        help="PR URL (e.g., https://github.com/owner/repo/pull/123 or owner/repo/pull/123)",
+    )
+    parser.add_argument(
         "--compat-threshold", type=int, help="Threshold percentage override"
     )
     parser.add_argument(
@@ -136,6 +140,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Attempt to enable auto-merge (local runs)",
     )
     return parser.parse_args(argv)
+
+
+def parse_pr_url(pr_url: str) -> tuple[str, int]:
+    """Parse PR URL or path into (owner/repo, pr_number)."""
+    pr_url = pr_url.strip()
+    pattern = r"(?:https?://github\.com/)?([^/]+/[^/]+)/pull/(\d+)"
+    match = re.match(pattern, pr_url)
+    if not match:
+        raise ValueError(
+            f"Invalid PR URL format: {pr_url}. Expected format: owner/repo/pull/123 or full URL"
+        )
+    return match.group(1), int(match.group(2))
 
 
 def resolve_pr_context(
@@ -151,22 +167,29 @@ def resolve_pr_context(
     if event and "pull_request" in event:
         repo_full = os.environ.get("GITHUB_REPOSITORY")
         pr_number = event["pull_request"].get("number")
-        title = event["pull_request"].get("title") or ""
-        body = event["pull_request"].get("body") or ""
-        author_login = event["pull_request"].get("user", {}).get("login") or ""
+        title = event["pull_request"].get("title", "")
+        body = event["pull_request"].get("body", "")
+        author_login = event["pull_request"].get("user", {}).get("login", "")
         logging.info(
             f"Event PR context: repo={repo_full}, pr={pr_number}, author={author_login}"
         )
         return repo_full, pr_number, title, body, author_login, inputs
-    pr_ref = os.environ.get("PR_REF")
+
     repo_full = args.repo
     pr_number = args.pr
+
+    if args.pr_url:
+        repo_full, pr_number = parse_pr_url(args.pr_url)
+        logging.debug(f"Parsed PR URL: repo={repo_full}, pr={pr_number}")
+
+    pr_ref = os.environ.get("PR_REF")
     if pr_ref and "#" in pr_ref and (not repo_full or not pr_number):
         repo_full, pr_num = pr_ref.split("#", 1)
         pr_number = int(pr_num)
+
     if not repo_full or not pr_number:
         raise ValueError(
-            "Provide --repo owner/repo and --pr 123 or PR_REF=owner/repo#123"
+            "Provide --pr-url, --repo owner/repo and --pr 123, or PR_REF=owner/repo#123"
         )
     gh = Github(auth=Auth.Token(token)) if Auth else Github(token)
     repo = gh.get_repo(repo_full)
@@ -268,9 +291,7 @@ def enable_automerge(token: str, pr_obj, merge_method: str = "SQUASH") -> None:
 
 
 def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
-    skip_label = (
-        os.environ.get("NO_AUTO_MERGE_LABEL", "no-auto-merge") or "no-auto-merge"
-    ).lower()
+    skip_label = os.environ.get("NO_AUTO_MERGE_LABEL", "no-auto-merge").lower()
     label_names = [lbl.name for lbl in pr_obj.get_labels()]
     logging.debug(f"PR labels: {label_names}; skip_label={skip_label}")
     if skip_label in [name.lower() for name in label_names]:

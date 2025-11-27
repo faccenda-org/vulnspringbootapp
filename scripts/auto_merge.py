@@ -191,6 +191,8 @@ def resolve_pr_context(
         raise ValueError(
             "Provide --pr-url, --repo owner/repo and --pr 123, or PR_REF=owner/repo#123"
         )
+    if not Github:
+        raise ImportError("PyGithub is required. Install with: pip install PyGithub")
     gh = Github(auth=Auth.Token(token)) if Auth else Github(token)
     repo = gh.get_repo(repo_full)
     pr_obj = repo.get_pull(number=int(pr_number))
@@ -208,7 +210,7 @@ def build_reasons(
 ) -> list[str]:
     return [
         f"upgrade type: {upgrade_type}",
-        f"compatibility score: {str(compat_score) + '%' if compat_score is not None else 'not found'}",
+        f"compatibility score: {str(compat_score) + '%' if compat_score is isinstance(compat_score, int) else ''}",
         f"threshold: {threshold}%",
     ]
 
@@ -228,6 +230,8 @@ def compute_decision(
 
 
 def connect_github(token: str, repo_full: str, pr_number: int) -> tuple:
+    if not Github:
+        raise ImportError("PyGithub is required. Install with: pip install PyGithub")
     gh = Github(auth=Auth.Token(token)) if Auth else Github(token)
     repo = gh.get_repo(repo_full)
     issue = repo.get_issue(number=pr_number)
@@ -297,10 +301,9 @@ def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
     if skip_label in [name.lower() for name in label_names]:
         issue.create_comment(
             (
-                f"Skipping auto-merge due to '{skip_label}' label.\n\n"
-                + "**Decision Details**\n"
-                + "- "
-                + "\n- ".join(reason_parts)
+                f"⛔ **Skipping auto-merge** due to `{skip_label}` label\n\n"
+                + "### 📋 Decision Details\n"
+                + "\n".join(f"- {part}" for part in reason_parts)
             )
         )
         append_summary("Result: skip (comment posted)")
@@ -320,10 +323,10 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
     body = (
         marker
         + "\n"
-        + "Requires manual review.\n\n"
-        + "**Decision Details**\n"
-        + "- "
-        + "\n- ".join(reason_parts)
+        + "👀 **Manual review required**\n\n"
+        + "This PR doesn't meet the auto-merge criteria.\n\n"
+        + "### 📋 Decision Details\n"
+        + "\n".join(f"- {part}" for part in reason_parts)
     )
     issue.create_comment(body)
     append_summary("Result: manual review requested (comment posted)")
@@ -345,21 +348,20 @@ def post_success_comment(
         return
     merge_method = os.environ.get("MERGE_METHOD", "squash")
     if upgrade_type == "patch":
-        rationale = "upgrade type is patch"
+        rationale = "🩹 patch upgrade"
     elif upgrade_type == "minor" and compat_score is not None:
-        rationale = f"minor upgrade with compatibility score {compat_score}% >= threshold {threshold}%"
+        rationale = f"✨ minor upgrade with compatibility score **{compat_score}%** ≥ threshold **{threshold}%**"
     else:
-        rationale = "meets configured criteria"
+        rationale = "✅ meets configured criteria"
     comment_body = (
         marker
         + "\n"
-        + f"Auto-merge will be enabled because {rationale}.\n\n"
-        + "**Decision Details**\n"
-        + "- "
-        + "\n- ".join(reason_parts)
+        + f"🚀 **Auto-merge enabled** — {rationale}\n\n"
+        + "### 📋 Decision Details\n"
+        + "\n".join(f"- {part}" for part in reason_parts)
         + "\n"
-        + f"- merge method: `{merge_method}`\n"
-        + "\nNative auto-merge will proceed after required checks pass."
+        + f"- **Merge method:** `{merge_method}`\n\n"
+        + "⏳ Native auto-merge will proceed after required checks pass."
     )
     issue.create_comment(comment_body)
     logging.info("Posted success criteria comment")
@@ -369,9 +371,10 @@ def local_automerge_note(issue) -> None:
     merge_method = os.environ.get("MERGE_METHOD", "squash")
     issue.create_comment(
         (
-            "Local run: would enable auto-merge.\n\n"
-            + "**Settings**\n"
-            + f"- merge method: `{merge_method}`\n"
+            "🧪 **Local run simulation**\n\n"
+            + "Would enable auto-merge in production.\n\n"
+            + "### ⚙️ Settings\n"
+            + f"- **Merge method:** `{merge_method}`"
         )
     )
     logging.info("Posted local auto-merge settings comment")
@@ -396,6 +399,17 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
         disable_automerge(token, pr_obj)
     except Exception:
         logging.exception("Failed to disable auto-merge")
+        try:
+            import traceback
+            error_details = traceback.format_exc()
+            issue.create_comment(
+                f"⚠️ **Warning**: Failed to disable auto-merge\n\n"
+                f"This is usually not critical, but you may want to check the PR settings.\n\n"
+                f"<details>\n<summary>📋 Error details</summary>\n\n"
+                f"```\n{error_details}\n```\n</details>"
+            )
+        except Exception:
+            pass
 
     if handle_skip_label(pr_obj, issue, reason_parts):
         logging.info("Skipping due to label")
@@ -412,6 +426,18 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
         except Exception:
             logging.exception("Failed to enable auto-merge")
             write_output("MERGE_ALLOWED", "false")
+            try:
+                import traceback
+                error_details = traceback.format_exc()
+                issue.create_comment(
+                    f"❌ **Error**: Failed to enable auto-merge\n\n"
+                    f"The PR meets the criteria for auto-merge, but enabling it failed. "
+                    f"You may need to enable it manually or merge the PR directly.\n\n"
+                    f"<details>\n<summary>📋 Full error message</summary>\n\n"
+                    f"```\n{error_details}\n```\n</details>"
+                )
+            except Exception:
+                pass
             return 1
         try:
             post_success_comment(
@@ -419,11 +445,32 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
             )
         except Exception:
             logging.exception("Failed posting success criteria comment")
+            try:
+                import traceback
+                error_details = traceback.format_exc()
+                issue.create_comment(
+                    f"⚠️ **Warning**: Auto-merge was enabled, but failed to post details comment\n\n"
+                    f"Auto-merge is active and will proceed when checks pass.\n\n"
+                    f"<details>\n<summary>📋 Error details</summary>\n\n"
+                    f"```\n{error_details}\n```\n</details>"
+                )
+            except Exception:
+                pass
         if args.enable_automerge:
             try:
                 local_automerge_note(issue)
             except Exception:
                 logging.exception("Failed to enable auto-merge in local mode")
+                try:
+                    import traceback
+                    error_details = traceback.format_exc()
+                    issue.create_comment(
+                        f"⚠️ **Warning**: Local run simulation failed to post note\n\n"
+                        f"<details>\n<summary>📋 Error details</summary>\n\n"
+                        f"```\n{error_details}\n```\n</details>"
+                    )
+                except Exception:
+                    pass
         return 0
 
     post_manual_review(issue, reason_parts)

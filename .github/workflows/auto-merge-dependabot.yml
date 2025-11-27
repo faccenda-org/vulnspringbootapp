@@ -35,6 +35,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: 21
+
+      - name: Regenerate verification metadata
+        run: |
+          ./gradlew --write-verification-metadata sha256 dependencies --write-locks --no-daemon
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --exit-code gradle/verification-metadata.xml gradle.lockfile; then
+            git add gradle/verification-metadata.xml gradle.lockfile
+            git commit -m "chore: update verification metadata and lockfile"
+            git push
+          else
+            echo "No changes to verification metadata or lockfile"
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

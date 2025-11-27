@@ -14,6 +14,8 @@ import logging
 import os
 import re
 import sys
+import requests
+
 from typing import Optional, Tuple
 
 try:
@@ -56,19 +58,24 @@ def get_upgrade_type(title: str) -> str:
 
 
 def get_compat_score(body: str) -> Optional[int]:
-    patterns = (
-        re.compile(r"Compatibility\s+score\s*[:|-]?\s*(\d{1,3})%", re.IGNORECASE),
-        re.compile(r"Update\s+confidence[\s\S]*?(\d{1,3})%", re.IGNORECASE),
-        re.compile(r"Confidence[\s\S]*?(\d{1,3})%", re.IGNORECASE),
+    svg_url_patterns = (
+        re.compile(r"\[!\[Dependabot compatibility score\]\((.*)\)\]", re.IGNORECASE),
     )
-    for rx in patterns:
-        match = rx.search(body or "")
-        if match:
+    for rx in svg_url_patterns:
+        svg_url_match = rx.search(body or "")
+        if svg_url_match:
             try:
-                return int(match.group(1))
+                score_svg_url = svg_url_match.group(1)
+                logging.debug(f"Found compatibility score SVG URL: {score_svg_url}")
+                compat_score_pattern = re.compile(r"<title>compatibility: (\d+)%</title>")
+                svg = requests.get(score_svg_url).text
+                compat_score_match = compat_score_pattern.search(svg)
+                if compat_score_match:
+                    logging.debug(f"Extracted compatibility score: {compat_score_match.group(1)}%")
+                    return int(compat_score_match.group(1))
             except ValueError:
                 continue
-    return None
+    return "unkown"
 
 
 def read_event() -> Optional[dict]:

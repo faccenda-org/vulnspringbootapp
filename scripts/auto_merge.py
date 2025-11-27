@@ -316,10 +316,6 @@ def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
 def post_manual_review(issue, reason_parts: list[str]) -> None:
     marker = "<!-- dependabot-manual-review -->"
     existing = list(issue.get_comments())
-    if any(marker in (c.body or "") for c in existing):
-        logging.debug("Manual review comment already exists, skipping")
-        write_output("MERGE_ALLOWED", "false")
-        return
     body = (
         marker
         + "\n"
@@ -328,11 +324,21 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
         + "### 📋 Decision Details\n"
         + "\n".join(f"- {part}" for part in reason_parts)
     )
-    issue.create_comment(body)
+
+    existing_comment = next((c for c in existing if marker in (c.body or "")), None)
+    if existing_comment:
+        if existing_comment.body != body:
+            existing_comment.edit(body)
+            logging.info("Updated manual review comment")
+        else:
+            logging.debug("Manual review comment already exists with same content, skipping")
+    else:
+        issue.create_comment(body)
+        logging.info("Posted manual review comment")
+
     append_summary("Result: manual review requested (comment posted)")
     write_output("MERGE_ALLOWED", "false")
     print("Manual review required")
-    logging.info("Posted manual review comment")
 
 
 def post_success_comment(
@@ -344,8 +350,6 @@ def post_success_comment(
 ) -> None:
     existing = list(issue.get_comments())
     marker = "<!-- dependabot-auto-merge-success -->"
-    if any(marker in (c.body or "") for c in existing):
-        return
     merge_method = os.environ.get("MERGE_METHOD", "squash")
     if upgrade_type == "patch":
         rationale = "🩹 patch upgrade"
@@ -363,8 +367,17 @@ def post_success_comment(
         + f"- **Merge method:** `{merge_method}`\n\n"
         + "⏳ Native auto-merge will proceed after required checks pass."
     )
-    issue.create_comment(comment_body)
-    logging.info("Posted success criteria comment")
+
+    existing_comment = next((c for c in existing if marker in (c.body or "")), None)
+    if existing_comment:
+        if existing_comment.body != comment_body:
+            existing_comment.edit(comment_body)
+            logging.info("Updated success criteria comment")
+        else:
+            logging.debug("Success comment already exists with same content, skipping")
+    else:
+        issue.create_comment(comment_body)
+        logging.info("Posted success criteria comment")
 
 
 def local_automerge_note(issue) -> None:

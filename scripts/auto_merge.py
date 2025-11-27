@@ -205,6 +205,60 @@ def connect_github(token: str, repo_full: str, pr_number: int) -> tuple:
     return repo, issue, pr_obj
 
 
+def disable_automerge(token: str, pr_obj) -> None:
+    """Disable auto-merge on PR using GraphQL API."""
+    node_id = pr_obj.node_id
+    mutation = """
+    mutation($pullRequestId: ID!) {
+      disablePullRequestAutoMerge(input: {pullRequestId: $pullRequestId}) {
+        clientMutationId
+      }
+    }
+    """
+    variables = {"pullRequestId": node_id}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    import requests
+    response = requests.post(
+        "https://api.github.com/graphql",
+        json={"query": mutation, "variables": variables},
+        headers=headers,
+    )
+    if response.status_code == 200:
+        logging.info("Disabled auto-merge on PR")
+    else:
+        logging.warning(f"Failed to disable auto-merge: {response.text}")
+
+
+def enable_automerge(token: str, pr_obj, merge_method: str = "SQUASH") -> None:
+    """Enable auto-merge on PR using GraphQL API."""
+    node_id = pr_obj.node_id
+    mutation = """
+    mutation($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
+      enablePullRequestAutoMerge(input: {pullRequestId: $pullRequestId, mergeMethod: $mergeMethod}) {
+        clientMutationId
+      }
+    }
+    """
+    variables = {"pullRequestId": node_id, "mergeMethod": merge_method.upper()}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    import requests
+    response = requests.post(
+        "https://api.github.com/graphql",
+        json={"query": mutation, "variables": variables},
+        headers=headers,
+    )
+    if response.status_code == 200:
+        logging.info(f"Enabled auto-merge on PR with method {merge_method}")
+    else:
+        logging.warning(f"Failed to enable auto-merge: {response.text}")
+
+
 def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
     skip_label = (
         os.environ.get("NO_AUTO_MERGE_LABEL", "no-auto-merge") or "no-auto-merge"
@@ -308,15 +362,28 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
     )
 
     _, issue, pr_obj = connect_github(token, repo_full, pr_number)
+
+    try:
+        disable_automerge(token, pr_obj)
+    except Exception:
+        logging.exception("Failed to disable auto-merge")
+
     if handle_skip_label(pr_obj, issue, reason_parts):
         logging.info("Skipping due to label")
         return 0
 
     is_dependabot = author_login.lower() == "dependabot[bot]"
     if should_merge and is_dependabot:
-        write_output("MERGE_ALLOWED", "true")
-        append_summary("Decision: auto-merge enabled when checks pass")
-        print("Allowed: auto-merge can be enabled")
+        merge_method = os.environ.get("MERGE_METHOD", "squash")
+        try:
+            enable_automerge(token, pr_obj, merge_method)
+            write_output("MERGE_ALLOWED", "true")
+            append_summary("Decision: auto-merge enabled when checks pass")
+            print("Allowed: auto-merge enabled")
+        except Exception:
+            logging.exception("Failed to enable auto-merge")
+            write_output("MERGE_ALLOWED", "false")
+            return 1
         try:
             post_success_comment(
                 issue, upgrade_type, compat_score, threshold, reason_parts

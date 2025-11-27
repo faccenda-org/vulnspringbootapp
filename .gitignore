@@ -36,5 +36,5 @@ bin/
 target/
 logs/
 log/
-
+venv/
 

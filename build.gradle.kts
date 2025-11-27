@@ -23,4 +23,6 @@ dependencies {
     // Intentionally vulnerable: log4j-core 2.14.1 has Log4Shell (CVE-2021-44228)
     implementation("org.apache.logging.log4j:log4j-core:2.14.1")
     implementation("org.apache.logging.log4j:log4j-api:2.14.1")
+    // Intentionally vulnerable: dom4j 2.1.3 has XXE (CVE-2020-10683), patch available in 2.1.4
+    implementation("org.dom4j:dom4j:2.1.3")
 }

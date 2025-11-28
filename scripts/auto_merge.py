@@ -301,14 +301,18 @@ def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
     if skip_label in [name.lower() for name in label_names]:
         issue.create_comment(
             (
-                f"## ⛔ **Skipping auto-merge** due to `{skip_label}` label\n\n"
+                f"## Dependabot Auto-merge: ⛔ **Skipping auto-merge** due to `{skip_label}` label\n\n"
                 + "### 📋 Decision Details\n"
                 + "\n".join(f"- {part}" for part in reason_parts)
             )
         )
-        append_summary("Result: skip (comment posted)")
+        append_summary(
+            f"## ⛔ Skipping Auto-merge\n\n"
+            f"PR has the `{skip_label}` label.\n\n"
+            f"### Decision Details\n" + "\n".join(f"- {part}" for part in reason_parts)
+        )
         write_output("MERGE_ALLOWED", "false")
-        print("Skip: label present")
+        print("⛔ Auto-merge skipped - Label present")
         return True
     return False
 
@@ -319,7 +323,7 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
     body = (
         marker
         + "\n"
-        + "## 👀 **Manual review required**\n\n"
+        + "## Dependabot Auto-merge: 👀 **Manual review required**\n\n"
         + "This PR doesn't meet the auto-merge criteria.\n\n"
         + "### 📋 Decision Details\n"
         + "\n".join(f"- {part}" for part in reason_parts)
@@ -338,7 +342,7 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
 
     append_summary("Result: manual review requested (comment posted)")
     write_output("MERGE_ALLOWED", "false")
-    print("Manual review required")
+    print("👀 Manual review required")
 
 
 def post_success_comment(
@@ -360,7 +364,7 @@ def post_success_comment(
     comment_body = (
         marker
         + "\n"
-        + f"## 🚀 **Auto-merge enabled** — {rationale}\n\n"
+        + f"## Dependabot Auto-merge: 🚀 **Auto-merge enabled** — {rationale}\n\n"
         + "### 📋 Decision Details\n"
         + "\n".join(f"- {part}" for part in reason_parts)
         + "\n"
@@ -384,7 +388,7 @@ def local_automerge_note(issue) -> None:
     merge_method = os.environ.get("MERGE_METHOD", "squash")
     issue.create_comment(
         (
-            "## 🧪 **Local run simulation**\n\n"
+            "## Dependabot Auto-merge: 🧪 **Local run simulation**\n\n"
             + "Would enable auto-merge in production.\n\n"
             + "### ⚙️ Settings\n"
             + f"- **Merge method:** `{merge_method}`"
@@ -416,7 +420,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
             import traceback
             error_details = traceback.format_exc()
             issue.create_comment(
-                f"## ⚠️ **Warning**: Failed to disable auto-merge\n\n"
+                f"## Dependabot Auto-merge: ⚠️ **Warning** - Failed to disable auto-merge\n\n"
                 f"This is usually not critical, but you may want to check the PR settings.\n\n"
                 f"<details>\n<summary>📋 Error details</summary>\n\n"
                 f"```\n{error_details}\n```\n</details>"
@@ -431,11 +435,26 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
     is_dependabot = author_login.lower() == "dependabot[bot]"
     if should_merge and is_dependabot:
         merge_method = os.environ.get("MERGE_METHOD", "squash")
+
+        # Build rationale string for summary
+        if upgrade_type == "Patch":
+            rationale = "🩹 patch upgrade"
+        elif upgrade_type == "Minor" and compat_score is not None:
+            rationale = f"✨ minor upgrade with compatibility score **{compat_score}%** ≥ threshold **{threshold}%**"
+        else:
+            rationale = "✅ meets configured criteria"
+
         try:
             enable_automerge(token, pr_obj, merge_method)
             write_output("MERGE_ALLOWED", "true")
-            append_summary("Decision: auto-merge enabled when checks pass")
-            print("Allowed: auto-merge enabled")
+            append_summary(
+                f"## 🚀 Auto-merge Enabled\n\n"
+                f"{rationale}\n\n"
+                f"### Decision Details\n" + "\n".join(f"- {part}" for part in reason_parts) +
+                f"\n- **Merge method:** `{merge_method}`\n\n"
+                f"⏳ Native auto-merge will proceed after required checks pass."
+            )
+            print("🚀 Auto-merge enabled")
         except Exception:
             logging.exception("Failed to enable auto-merge")
             write_output("MERGE_ALLOWED", "false")
@@ -443,7 +462,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                 import traceback
                 error_details = traceback.format_exc()
                 issue.create_comment(
-                    f"## ❌ **Error**: Failed to enable auto-merge\n\n"
+                    f"## Dependabot Auto-merge: ❌ **Error** - Failed to enable auto-merge\n\n"
                     f"The PR meets the criteria for auto-merge, but enabling it failed. "
                     f"You may need to enable it manually or merge the PR directly.\n\n"
                     f"<details>\n<summary>📋 Full error message</summary>\n\n"
@@ -462,7 +481,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                 import traceback
                 error_details = traceback.format_exc()
                 issue.create_comment(
-                    f"## ⚠️ **Warning**: Auto-merge was enabled, but failed to post details comment\n\n"
+                    f"## Dependabot Auto-merge: ⚠️ **Warning** - Failed to post details comment\n\n"
                     f"Auto-merge is active and will proceed when checks pass.\n\n"
                     f"<details>\n<summary>📋 Error details</summary>\n\n"
                     f"```\n{error_details}\n```\n</details>"
@@ -478,7 +497,7 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                     import traceback
                     error_details = traceback.format_exc()
                     issue.create_comment(
-                        f"## ⚠️ **Warning**: Local run simulation failed to post note\n\n"
+                        f"## Dependabot Auto-merge: ⚠️ **Warning** - Local run simulation failed\n\n"
                         f"<details>\n<summary>📋 Error details</summary>\n\n"
                         f"```\n{error_details}\n```\n</details>"
                     )

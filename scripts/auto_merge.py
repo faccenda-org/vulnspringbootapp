@@ -312,6 +312,8 @@ def handle_skip_label(pr_obj, issue, reason_parts: list[str]) -> bool:
             f"### Decision Details\n" + "\n".join(f"- {part}" for part in reason_parts)
         )
         write_output("MERGE_ALLOWED", "false")
+        with open("decision_outcome.txt", "w") as f:
+            f.write("⛔ Auto-merge skipped - Label present")
         print("⛔ Auto-merge skipped - Label present")
         return True
     return False
@@ -342,6 +344,8 @@ def post_manual_review(issue, reason_parts: list[str]) -> None:
 
     append_summary("Result: manual review requested (comment posted)")
     write_output("MERGE_ALLOWED", "false")
+    with open("decision_outcome.txt", "w") as f:
+        f.write("👀 Manual review required")
     print("👀 Manual review required")
 
 
@@ -454,6 +458,8 @@ def run_decision_flow(args: argparse.Namespace, token: str) -> int:
                 f"\n- **Merge method:** `{merge_method}`\n\n"
                 f"⏳ Native auto-merge will proceed after required checks pass."
             )
+            with open("decision_outcome.txt", "w") as f:
+                f.write("🚀 Auto-merge enabled")
             print("🚀 Auto-merge enabled")
         except Exception:
             logging.exception("Failed to enable auto-merge")

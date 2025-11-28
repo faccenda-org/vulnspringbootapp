@@ -52,8 +52,17 @@ jobs:
           pip install PyGithub requests
 
       - name: Run auto-merge decision
+        id: decision
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPAT_THRESHOLD: ${{ github.event.inputs.compat_threshold }}
         run: |
           python scripts/auto_merge.py
+
+      - name: Set check status
+        if: always()
+        run: |
+          if [ -f decision_outcome.txt ]; then
+            OUTCOME=$(cat decision_outcome.txt)
+            echo "::notice title=Auto-merge Decision::${OUTCOME}"
+          fi

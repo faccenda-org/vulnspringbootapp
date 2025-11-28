@@ -95,10 +95,10 @@ def write_output(key: str, value: str) -> None:
 
 
 def append_summary(text: str) -> None:
-    summary = os.environ.get("GITHUB_STEP_SUMMARY")
-    if summary:
-        with open(summary, "a") as fh:
-            fh.write(f"\n{text}\n")
+    summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_file:
+        with open(summary_file, "a", encoding="utf-8") as fh:
+            fh.write(f"{text}\n")
 
 
 def load_threshold(event_inputs: Optional[dict]) -> int:

@@ -57,12 +57,3 @@ jobs:
           COMPAT_THRESHOLD: ${{ github.event.inputs.compat_threshold }}
         run: |
           python scripts/auto_merge.py
-
-      - name: Output summary
-        if: always()
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          echo "Title: $PR_TITLE" >> $GITHUB_STEP_SUMMARY
-          echo "Actor: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "Merge method: $MERGE_METHOD" >> $GITHUB_STEP_SUMMARY

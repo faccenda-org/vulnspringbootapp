@@ -18,7 +18,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
     implementation("org.apache.commons:commons-text:1.9")
     // Intentionally vulnerable: jackson-databind 2.13.0 has multiple CVEs
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.20.1")
     // Intentionally vulnerable: log4j-core 2.14.1 has Log4Shell (CVE-2021-44228)
     implementation("org.apache.logging.log4j:log4j-core:2.14.1")
     implementation("org.apache.logging.log4j:log4j-api:2.14.1")

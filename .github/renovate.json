@@ -1,7 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended", ":rebaseStalePrs"],
-  "enabledManagers": ["gradle", "github-actions"],
   "labels": ["renovate"],
   "dependencyDashboard": false,
   "prConcurrentLimit": 2,
@@ -14,7 +13,6 @@
     },
     {
       "matchManagers": ["github-actions"],
-      "groupName": "github-actions"
     }
   ],
   "schedule": ["before 6am on monday"],

@@ -16,7 +16,7 @@ java {
 dependencies {
     val springBootVersion = providers.gradleProperty("springBootVersion").get()
     implementation("org.springframework.boot:spring-boot-starter-web:$springBootVersion")
-    implementation("org.apache.commons:commons-text:1.9")
+    implementation("org.apache.commons:commons-text:1.15.0")
     // Intentionally vulnerable: jackson-databind 2.13.0 has multiple CVEs
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.4.2")
     // Intentionally vulnerable: log4j-core 2.14.1 has Log4Shell (CVE-2021-44228)

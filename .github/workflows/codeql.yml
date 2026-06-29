@@ -24,7 +24,7 @@ jobs:
         language: [ 'java-kotlin', 'actions' ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
         if: matrix.language == 'java-kotlin'
